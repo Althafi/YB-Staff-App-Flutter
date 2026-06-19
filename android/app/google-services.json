@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "284692746487",
+    "project_id": "yukbersihin-internal",
+    "storage_bucket": "yukbersihin-internal.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:284692746487:android:f4ba84becd30cb433dc3f2",
+        "android_client_info": {
+          "package_name": "com.example.yb_staff_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA7WPNE23EJ0oX98sdCg6A-dFcsZCaSyJE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

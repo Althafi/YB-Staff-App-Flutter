@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyAzejq_vZiDQhVt0h3O_dkgp2V5UqVtrxQ</string>
+	<key>GCM_SENDER_ID</key>
+	<string>284692746487</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.example.ybStaffApp</string>
+	<key>PROJECT_ID</key>
+	<string>yukbersihin-internal</string>
+	<key>STORAGE_BUCKET</key>
+	<string>yukbersihin-internal.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:284692746487:ios:a1bdeb90eb2039343dc3f2</string>
+</dict>
+</plist>
