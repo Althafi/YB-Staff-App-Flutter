@@ -26,6 +26,10 @@ class JobModel {
     this.orderCode,
     this.mapsLink,
     this.whatsappUrl,
+    this.siteContactIsOrderer = true,
+    this.siteContactName,
+    this.siteContactPhone,
+    this.siteContactNormalizedPhone,
   });
 
   final int id;
@@ -39,6 +43,10 @@ class JobModel {
   final List<String> services;
   final String? region;
   final String? power;
+  final bool siteContactIsOrderer;
+  final String? siteContactName;
+  final String? siteContactPhone;
+  final String? siteContactNormalizedPhone;
   final double discount;
   final String? discountType;
   final double discountValue;
@@ -81,6 +89,11 @@ class JobModel {
       finalTotalPrice: _parseDouble(json['final_total_price']) ?? 0.0,
       photos: _parsePhotos(json['photos']),
       notes: _parseString(json['notes']),
+      siteContactIsOrderer: _parseBool(json['site_contact_is_orderer']) ?? true,
+      siteContactName: _parseString(json['site_contact_name']),
+      siteContactPhone: _parseString(json['site_contact_phone']),
+      siteContactNormalizedPhone:
+          _parseString(json['site_contact_normalized_phone']),
     );
   }
 
@@ -88,6 +101,12 @@ class JobModel {
 
   static String? _parseString(dynamic v) =>
       v is String ? v : v?.toString();
+
+  static bool? _parseBool(dynamic v) {
+    if (v is bool) return v;
+    if (v is String) return v.toLowerCase() == 'true';
+    return null;
+  }
 
   static int? _parseInt(dynamic v) {
     if (v is int) return v;
@@ -164,6 +183,10 @@ class JobModel {
         orderCode: orderCode,
         mapsLink: mapsLink,
         whatsappUrl: whatsappUrl,
+        siteContactIsOrderer: siteContactIsOrderer,
+        siteContactName: siteContactName,
+        siteContactPhone: siteContactPhone,
+        siteContactNormalizedPhone: siteContactNormalizedPhone,
       );
 
   static JobStatus _parseStatus(String status) {

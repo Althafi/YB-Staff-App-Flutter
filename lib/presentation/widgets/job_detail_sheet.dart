@@ -102,7 +102,10 @@ class JobDetailSheet extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildCustomerSection(),
+                      _buildOrdererSection(context),
+                      if (!job.siteContactIsOrderer &&
+                          (job.siteContactName?.isNotEmpty ?? false))
+                        _buildSiteContactSection(context),
                       _buildLocationSection(),
                       _buildStatusSection(),
                       _buildNotesSection(),
@@ -122,40 +125,28 @@ class JobDetailSheet extends StatelessWidget {
 
   // ── Section builders ──────────────────────────────────────────────────────
 
-  Widget _buildCustomerSection() {
+  Widget _buildOrdererSection(BuildContext context) {
     return _section(
-      title: AppStrings.sectionCustomer,
+      title: AppStrings.sectionOrderer,
       children: [
-        _infoRow(AppStrings.labelCustomer, job.customerName),
-        _infoRow(AppStrings.labelPhone, job.customerPhone, isPhone: true),
-        if (job.whatsappUrl != null)
-          Padding(
-            padding: const EdgeInsets.only(top: AppSpacing.sm),
-            child: SizedBox(
-              width: double.infinity,
-              height: 38,
-              child: OutlinedButton.icon(
-                onPressed: () async {
-                  final uri = Uri.parse(job.whatsappUrl!);
-                  if (await canLaunchUrl(uri)) await launchUrl(uri);
-                },
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFF25D366)),
-                  foregroundColor: const Color(0xFF25D366),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusButton),
-                  ),
-                ),
-                icon: const Icon(Icons.chat_rounded, size: 16),
-                label: Text(
-                  AppStrings.whatsappCustomer,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
+        _infoRow(AppStrings.labelOrderer, job.customerName),
+        _phoneRow(context, AppStrings.labelOrdererPhone, job.customerPhone),
+      ],
+    );
+  }
+
+  Widget _buildSiteContactSection(BuildContext context) {
+    final phone = job.siteContactPhone;
+    return _section(
+      title: AppStrings.sectionSiteContact,
+      children: [
+        _infoRow(AppStrings.labelSiteContactName, job.siteContactName!),
+        if (phone != null && phone.isNotEmpty)
+          _phoneRow(
+            context,
+            AppStrings.labelSiteContactPhone,
+            phone,
+            normalizedPhone: job.siteContactNormalizedPhone,
           ),
       ],
     );
@@ -485,35 +476,7 @@ class JobDetailSheet extends StatelessWidget {
     );
   }
 
-  Widget _infoRow(String label, String value, {bool isPhone = false}) {
-    final Widget valueWidget = isPhone
-        ? GestureDetector(
-            onTap: () async {
-              final uri = Uri.parse('tel:$value');
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(uri);
-              }
-            },
-            child: Text(
-              value,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.primary,
-                decoration: TextDecoration.underline,
-                decorationColor: AppColors.primary,
-              ),
-            ),
-          )
-        : Text(
-            value,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          );
-
+  Widget _infoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -530,10 +493,158 @@ class JobDetailSheet extends StatelessWidget {
               ),
             ),
           ),
-          Expanded(child: valueWidget),
+          Expanded(
+            child: Text(
+              value,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  Widget _phoneRow(
+    BuildContext context,
+    String label,
+    String phone, {
+    String? normalizedPhone,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                fontWeight: FontWeight.w400,
+                color: AppColors.textHint,
+              ),
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: () =>
+                  _showContactOptions(context, phone, normalizedPhone),
+              child: Text(
+                phone,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                  decoration: TextDecoration.underline,
+                  decorationColor: AppColors.primary,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Contact actions (WhatsApp / call) ───────────────────────────────────────
+
+  void _showContactOptions(
+    BuildContext context,
+    String phone,
+    String? normalizedPhone,
+  ) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppSpacing.radiusSheet)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(vertical: 10),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD1D5DB),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.chat_rounded, color: Color(0xFF25D366)),
+                title: Text(
+                  AppStrings.chatWhatsapp,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _launchWhatsApp(phone, normalizedPhone);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.call_rounded, color: AppColors.primary),
+                title: Text(
+                  AppStrings.callPhone,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _launchPhoneCall(phone);
+                },
+              ),
+              const SizedBox(height: AppSpacing.sm),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _launchWhatsApp(String phone, String? normalizedPhone) async {
+    final target = normalizedPhone ?? _normalizePhone(phone);
+    final appUri = Uri.parse('whatsapp://send?phone=$target');
+    if (await canLaunchUrl(appUri)) {
+      await launchUrl(appUri);
+      return;
+    }
+    final webUri = Uri.parse('https://wa.me/$target');
+    if (await canLaunchUrl(webUri)) {
+      await launchUrl(webUri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Future<void> _launchPhoneCall(String phone) async {
+    final uri = Uri.parse('tel:$phone');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
+  static String _normalizePhone(String phone) {
+    var digits = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.startsWith('0')) {
+      digits = '62${digits.substring(1)}';
+    }
+    return digits;
   }
 
   Widget _itemRow(JobItem item) {

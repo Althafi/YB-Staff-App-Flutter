@@ -68,6 +68,10 @@ class Job {
     this.orderCode,
     this.mapsLink,
     this.whatsappUrl,
+    this.siteContactIsOrderer = true,
+    this.siteContactName,
+    this.siteContactPhone,
+    this.siteContactNormalizedPhone,
   });
 
   final int id;
@@ -81,6 +85,12 @@ class Job {
   final List<String> services;
   final String? region;
   final String? power;
+
+  // ── Site contact (orang di lokasi) ──────────────────────────────────────────
+  final bool siteContactIsOrderer;
+  final String? siteContactName;
+  final String? siteContactPhone;
+  final String? siteContactNormalizedPhone;
 
   // ── Pricing ───────────────────────────────────────────────────────────────
   final double discount;         // discount_amount (Rp)
@@ -126,6 +136,10 @@ class Job {
     String? orderCode,
     String? mapsLink,
     String? whatsappUrl,
+    bool? siteContactIsOrderer,
+    String? siteContactName,
+    String? siteContactPhone,
+    String? siteContactNormalizedPhone,
   }) {
     return Job(
       id: id ?? this.id,
@@ -151,6 +165,11 @@ class Job {
       orderCode: orderCode ?? this.orderCode,
       mapsLink: mapsLink ?? this.mapsLink,
       whatsappUrl: whatsappUrl ?? this.whatsappUrl,
+      siteContactIsOrderer: siteContactIsOrderer ?? this.siteContactIsOrderer,
+      siteContactName: siteContactName ?? this.siteContactName,
+      siteContactPhone: siteContactPhone ?? this.siteContactPhone,
+      siteContactNormalizedPhone:
+          siteContactNormalizedPhone ?? this.siteContactNormalizedPhone,
     );
   }
 

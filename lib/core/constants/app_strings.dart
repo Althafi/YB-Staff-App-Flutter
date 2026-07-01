@@ -103,10 +103,14 @@ abstract final class AppStrings {
 
   // ── Job Detail ─────────────────────────────────────────────────────────────
   static const String jobDetailTitle = 'Detail Pekerjaan';
-  static const String sectionCustomer = 'INFORMASI CUSTOMER';
-  static const String labelCustomer = 'Customer';
-  static const String labelPhone = 'Telepon';
-  static const String whatsappCustomer = 'WhatsApp Customer';
+  static const String sectionOrderer = 'INFORMASI PEMESAN';
+  static const String labelOrderer = 'Pemesan';
+  static const String labelOrdererPhone = 'No. Pemesan';
+  static const String sectionSiteContact = 'KONTAK ORANG DI LOKASI';
+  static const String labelSiteContactName = 'Nama';
+  static const String labelSiteContactPhone = 'Nomor';
+  static const String chatWhatsapp = 'Chat via WhatsApp';
+  static const String callPhone = 'Telepon';
   static const String sectionLocation = 'LOKASI';
   static const String labelRegion = 'Wilayah';
   static const String labelAddress = 'Alamat';

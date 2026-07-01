@@ -8,6 +8,11 @@ import 'package:yb_staff_app/core/utils/navigator_key.dart';
 // ── Background isolate handler ────────────────────────────────────────────────
 @pragma('vm:entry-point')
 Future<void> _onBackgroundMessage(RemoteMessage message) async {
+  // When the payload includes a `notification` block, the OS already renders
+  // it automatically while the app is backgrounded/terminated. Showing it
+  // again here would duplicate the popup, so only handle data-only messages.
+  if (message.notification != null) return;
+
   final localNotif = FlutterLocalNotificationsPlugin();
   await localNotif.initialize(
     const InitializationSettings(
