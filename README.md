@@ -9,11 +9,13 @@ A Flutter mobile application for **YukBersihin** field staff. Staff use this app
 ## Features
 
 - **Authentication** — Login/logout with Laravel Sanctum token, persisted in secure storage. Auto session restore on app launch.
-- **Daily Job Schedule** — Date navigator to browse assigned jobs by day. Pull-to-refresh support.
-- **Job Detail** — Bottom sheet with full customer info, estimated items, pricing breakdown, photos, Google Maps link, and WhatsApp shortcut.
+- **Daily Job Schedule** — Date navigator to browse assigned jobs by day. Pull-to-refresh support and skeleton loading placeholders.
+- **Job Detail** — Bottom sheet with full customer info, on-site contact (person at the location), estimated items, pricing breakdown, invoice summary, photos, region/power badge, notes, Google Maps link, and WhatsApp shortcut.
 - **Job Status Flow** — Staff can progress a job through its lifecycle:
-  `Ditugaskan → Sedang Dikerjakan → Menunggu Verifikasi → Invoice Dibuat`
-- **Final Items Report** — Submit actual service items with optional discount (fixed amount) and down payment before job is finalized.
+  `Ditugaskan → Sedang Dikerjakan → Menunggu Verifikasi → Invoice Dibuat → Selesai` (or `Dibatalkan`)
+- **Final Items Report** — Submit actual service items with optional discount (fixed amount) and down payment before job is finalized. Report can be edited again while the job is still editable.
+- **Hourly Jobs** — Hourly orders show planned duration, cleaner count, and estimated total. Staff submit (or update) the actual duration, cleaner count, and notes via the hourly report sheet.
+- **Confirmation Dialogs** — Sensitive actions (e.g. starting a job, submitting a report) ask for confirmation first.
 - **Profile Management** — Edit display name, phone number, and profile photo (camera or gallery).
 - **Change Password** — Secure password update flow with current password verification.
 - **Push Notifications** — FCM-powered notifications with local notification display for foreground messages. Tap-to-navigate to notification screen from both foreground and background states.
@@ -34,9 +36,10 @@ A Flutter mobile application for **YukBersihin** field staff. Staff use this app
 | Push Notifications | Firebase Cloud Messaging + `flutter_local_notifications` |
 | HTTP Inspector | Alice + alice_http |
 | Fonts | Google Fonts — Plus Jakarta Sans |
-| Localization | `flutter_localizations` (id_ID) |
+| Localization | `flutter_localizations` + `intl` (id_ID) |
 | Image Picker | `image_picker` |
 | Connectivity | `connectivity_plus` |
+| External Links | `url_launcher` (Maps, WhatsApp, phone) |
 | Splash Screen | `flutter_native_splash` |
 | Launcher Icon | `flutter_launcher_icons` |
 | Backend | Laravel + Sanctum on Railway |
@@ -59,6 +62,8 @@ core/           Shared — ApiClient, theme, utils, FCM service, storage
 - `Result<T>` (`Success<T>` / `Failure<T>`) used as the return type of all repository methods — no raw exceptions crossing layer boundaries
 - `AsyncNotifierProvider.autoDispose.family<JobsNotifier, List<Job>, DateTime>` — each date has its own isolated provider that disposes when no longer watched
 - `appNavigatorKey` (`GlobalKey<NavigatorState>`) enables navigation from FCM callbacks and the unauthorized handler outside the widget tree
+- `appLifecycleProvider` exposes the app lifecycle state (foreground/background) to providers
+- `Job` aggregates optional sub-entities (`HourlyDetails`, `HourlyReport`, `InvoiceSummary`) so hourly and invoice data stay isolated from the base job fields
 
 ---
 
@@ -68,24 +73,28 @@ core/           Shared — ApiClient, theme, utils, FCM service, storage
 lib/
 ├── main.dart
 ├── app.dart                          # MaterialApp, routes, SplashRouter
-├── firebase_options.dart
+├── firebase_options.dart             # Gitignored — copy from firebase_options.example.dart
+├── firebase_options.example.dart
 ├── core/
-│   ├── constants/api_constants.dart  # All endpoint paths
+│   ├── config/                       # env.dart (gitignored) & env.example.dart — base URL
+│   ├── constants/                    # api_constants.dart (endpoint paths), app_strings.dart
 │   ├── network/
 │   │   ├── api_client.dart           # HTTP wrapper (GET/POST/PUT/PATCH/DELETE/multipart)
 │   │   ├── api_exception.dart
 │   │   └── http_inspector.dart       # Alice instance
+│   ├── providers/app_lifecycle_provider.dart
 │   ├── services/fcm_service.dart     # FCM setup, token registration, notification display
 │   ├── storage/token_storage.dart    # Secure token read/write
 │   ├── theme/                        # AppColors, AppSpacing, AppTheme, AppTypography
-│   ├── utils/                        # CurrencyFormatter, DateFormatter, Result, NavigatorKey
+│   ├── utils/                        # CurrencyFormatter, DateFormatter, ItemFormatter, Result, NavigatorKey
 │   └── widgets/                      # AppToast, ConnectivityObserver
 ├── data/
 │   ├── datasources/                  # Auth, Job, Notification remote datasources
-│   ├── models/                       # UserModel, JobModel, JobItemModel, NotificationModel
+│   ├── mock/                         # Mock job repository for local UI testing
+│   ├── models/                       # User, Job, JobItem, HourlyDetails, HourlyReport, InvoiceSummary, ServiceItem, Notification models
 │   └── repositories_impl/            # Auth, Job, Notification repository implementations
 ├── domain/
-│   ├── entities/                     # User, Job, JobItem, ServiceItem, AppNotification
+│   ├── entities/                     # User, Job, JobItem, HourlyDetails, HourlyReport, InvoiceSummary, ServiceItem, AppNotification
 │   └── repositories/                 # Abstract repository contracts
 └── presentation/
     ├── providers/                    # auth_provider, jobs_provider, notification_provider, catalog_provider
@@ -95,10 +104,16 @@ lib/
     │   └── notification/notification_screen.dart
     └── widgets/
         ├── job_card.dart             # Home list card
+        ├── job_card_skeleton.dart    # Loading placeholder
+        ├── empty_jobs.dart           # Empty state
         ├── job_detail_sheet.dart     # Full detail bottom sheet
         ├── final_items_sheet.dart    # Final report form (items, discount, DP)
+        ├── hourly_report_sheet.dart  # Hourly report form (actual duration, cleaners, notes)
+        ├── confirm_dialog.dart       # Confirmation dialog for sensitive actions
         ├── profile_sheet.dart        # Edit profile photo + name + phone
-        └── change_password_sheet.dart
+        ├── change_password_sheet.dart
+        ├── app_text_field.dart       # Shared text input
+        └── primary_button.dart       # Shared primary button
 ```
 
 ---
@@ -125,15 +140,18 @@ lib/
    flutter pub get
    ```
 
-3. **Firebase**  
-   Place your `google-services.json` in `android/app/` and `GoogleService-Info.plist` in `ios/Runner/`. The `firebase_options.dart` is already committed — replace it with your own project config if needed.
+3. **Environment config**  
+   Copy `lib/core/config/env.example.dart` to `lib/core/config/env.dart` and set `baseUrl`. `env.dart` is gitignored and must not be committed.
 
-4. **Run**
+4. **Firebase**  
+   Place your `google-services.json` in `android/app/` and `GoogleService-Info.plist` in `ios/Runner/`. Copy `lib/firebase_options.example.dart` to `lib/firebase_options.dart` and replace it with your own project config (gitignored).
+
+5. **Run**
    ```bash
    flutter run
    ```
 
-> The app points to the staging backend at `https://api-yukbersihin-staging.up.railway.app`. To change the base URL, edit `lib/core/constants/api_constants.dart`.
+> The base URL is read from `Env.baseUrl` in `lib/core/config/env.dart` (e.g. the staging backend at `https://api-yukbersihin-staging.up.railway.app`). Endpoint paths live in `lib/core/constants/api_constants.dart`.
 
 ---
 
@@ -144,13 +162,17 @@ All endpoints require `Authorization: Bearer <token>` except login.
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `POST` | `/api/auth/login` | Staff login, returns `{ token, user }` |
+| `POST` | `/api/auth/logout` | Invalidate current Sanctum token |
 | `GET` | `/api/auth/me` | Get authenticated user profile |
 | `PUT` | `/api/profile` | Update name & phone |
-| `POST` | `/api/auth/me/avatar` | Upload profile photo (multipart) |
+| `POST` | `/api/profile/avatar` | Upload profile photo (multipart) |
 | `POST` | `/api/profile/password` | Change password |
 | `GET` | `/api/my-jobs?date=YYYY-MM-DD` | List jobs for a date |
 | `POST` | `/api/my-jobs/{id}/start` | Start a job (assigned → in_progress) |
 | `POST` | `/api/my-jobs/{id}/final-items` | Submit final items report |
+| `POST` / `PUT` | `/api/my-jobs/{id}/hourly-report` | Submit / update hourly report (actual duration, cleaner count) |
+| `POST` | `/api/my-jobs/{id}/photos` | Upload job item photo (multipart) |
+| `DELETE` | `/api/my-jobs/{id}/photos/{photoId}` | Delete an uploaded job photo |
 | `GET` | `/api/staff/orders/{id}` | Full job detail |
 | `GET` | `/api/notifications` | List notifications |
 | `GET` | `/api/notifications/unread-count` | Unread badge count |
